@@ -1,0 +1,85 @@
+{
+	"_comment": "Set MY_SECRET env var before building with `time packer build jamf.json`",
+	"builders": [
+		{
+			"boot_command": [
+				"<esc><esc><enter><wait>",
+				"/install/vmlinuz ",
+				"noapic ",
+				"initrd=/install/initrd.gz ",
+				"file=/floppy/preseed.cfg ",
+				"debian-installer=en_US ",
+				"auto ",
+				"locale=en_US ",
+				"kbd-chooser/method=us ",
+				"hostname={{ user `hostname` }} ",
+				"grub-installer/bootdev=/dev/sda<wait> ",
+				"fb=false ",
+				"debconf/frontend=noninteractive ",
+				"keyboard-configuration/modelcode=SKIP ",
+				"keyboard-configuration/layout=USA ",
+				"keyboard-configuration/variant=USA ",
+				"console-setup/ask_detect=false ",
+				"passwd/user-fullname={{ user `username` }} ",
+				"passwd/user-password={{ user `password` }} ",
+				"passwd/user-password-again={{ user `password` }} ",
+				"passwd/username={{ user `username` }} ",
+				"-- <enter>"
+			],
+			"disk_size": "{{ user `disk_size` }}",
+			"floppy_files": [
+				"{{ user `preseed` }}"
+			],
+			"guest_os_type": "ubuntu-64",
+			"headless": false,
+			"http_directory": "{{ user `http_directory` }}",
+			"iso_checksum_type": "{{ user `iso_checksum_type` }}",
+			"iso_checksum": "{{ user `iso_checksum` }}",
+			"iso_urls": [
+				"{{ user `iso_file_path` }}"
+			],
+			"output_directory": "output-{{ user `vm_name` }}-{{ timestamp }}-vmware-iso",
+			"shutdown_command": "echo '{{ user `password` }}'|sudo -S shutdown -P now",
+			"ssh_password": "{{ user `password` }}",
+			"ssh_username": "{{ user `username` }}",
+			"ssh_wait_timeout": "10000s",
+			"tools_upload_flavor": "linux",
+			"type": "vmware-iso",
+			"vm_name": "{{ user `vm_name` }}",
+			"vmx_data": {
+				"memsize": "6144"
+			}
+		}
+	],
+	"provisioners": [
+		{
+			"type": "file",
+			"source": "copy",
+			"destination": "/home/{{ user `username` }}/copy"
+		},
+		{
+			"environment_vars": [
+				"CLEANUP_PAUSE={{user `cleanup_pause`}}"
+			],
+			"execute_command": "echo '{{ user `password` }}' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+			"scripts": [
+				"script/install.sh"
+			],
+			"type": "shell",
+			"expect_disconnect": "true"
+		}
+	],
+	"variables": {
+		"disk_size": "65536",
+		"hostname": "jamf.example.com",
+		"iso_checksum_type": "sha256",
+		"iso_checksum": "a2cb36dc010d98ad9253ea5ad5a07fd6b409e3412c48f1860536970b073c98f5",
+		"iso_file_path": "ubuntu-18.04.2-server-amd64.iso",
+		"iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/18.04/release/ubuntu-18.04.2-server-amd64.iso",
+		"password": "cleartext",
+		"http_directory" : "http/",
+		"preseed" : "http/preseed.cfg",
+		"username": "james",
+		"vm_name": "jamf"
+	}
+}
